@@ -1,0 +1,185 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab 2 — Collaborative Filtering</title>
+<link rel="stylesheet" href="vendor/reveal.js/dist/reset.css"><link rel="stylesheet" href="vendor/reveal.js/dist/reveal.css">
+<link rel="stylesheet" href="vendor/reveal.js/dist/theme/white.css"><link rel="stylesheet" href="vendor/reveal.js/plugin/highlight/monokai.css">
+<link rel="stylesheet" href="vendor/katex/dist/katex.min.css"><link rel="stylesheet" href="assets/acm.css"></head>
+<body><div class="reveal"><div class="slides">
+<section >
+<div class="title-slide"><p class="tiny">ACM Workshop · Recommender Systems · Day 1 · 11:45–12:45</p>
+<h1>Lab 2 — Build a Collaborative-Filtering Recommender</h1>
+<p class="big">User-based and item-based CF from scratch: neighbours → predictions → Top-N</p>
+<div class="small">Notebook: <code class="inline">Lab2_Collaborative_Filtering.ipynb</code> · needs <code class="inline">data/processed/train.csv</code> from Lab 1</div><div class="pipeline"><span class="">Raw data</span><span class="">EDA</span><span class="on">Similarity</span><span class="on">Collaborative filtering</span><span class="">Matrix factorization</span><span class="on">Prediction</span><span class="on">Top-N</span><span class="">Evaluation</span></div></div></section>
+<section ><h2>Step 1 — Similarity on a toy example</h2>
+<div class="cols"><div>
+<pre><code class="language-python" data-trim data-noescape>toy = pd.DataFrame({&quot;LOTR&quot;:[5,5,1],&quot;Matrix&quot;:[5,4,1],&quot;Titanic&quot;:[1,1,5]}, index=list(&quot;ABC&quot;))
+cosine_similarity(toy)</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>cosine (raw ratings)
+      A      B      C
+A  1.000  0.994  0.404
+B  0.994  1.000  0.416
+C  0.404  0.416  1.000</code></pre></div>
+<div><div class="box warn">A and C <b>disagree on everything</b>, yet raw cosine says 0.40.<br>All ratings are positive → vectors point in a similar direction.</div>
+<p class="small">By hand (A,B): <br>$\cos=\dfrac{5\cdot5+5\cdot4+1\cdot1}{\sqrt{51}\sqrt{42}}\approx 0.994$</p></div></div></section>
+<section ><h2>Step 1b — Mean-centre, then cosine</h2>
+<div class="cols"><div>
+<pre><code class="language-python" data-trim data-noescape>centred = toy.sub(toy.mean(axis=1), axis=0)
+cosine_similarity(centred)</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>centred ratings        cosine on centred
+      LOTR Matrix Titanic        A      B      C
+A     1.33   1.33  -2.67   A  1.000  0.971 -1.000
+B     1.67   0.67  -2.33   B  0.971  1.000 -0.971
+C    -1.33  -1.33   2.67   C -1.000 -0.971  1.000</code></pre></div>
+<div><div class="box good">Now A≈B (+0.97) and A, C are <b>opposites</b> (−1.0).</div>
+<p>This is (almost) the <b>Pearson correlation</b>.</p>
+<p class="small">“above my average” → positive<br>“below my average” → negative<br>→ removes <b>user bias</b> (Lab 1 §5b)</p></div></div></section>
+<section ><h2>Step 2 — The training matrix in NumPy</h2>
+<pre><code class="language-python" data-trim data-noescape>R = np.full((n_users, n_items), np.nan)          # NaN = unknown
+R[train.userId.map(u_idx), train.movieId.map(i_idx)] = train.rating.values
+M    = ~np.isnan(R)                               # mask of known cells
+mu_u = np.nanmean(R, axis=1)                      # each user&#x27;s mean
+Rc   = np.where(M, R - mu_u[:, None], 0.0)        # centred, unknown → 0</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>R: (610, 9724) | known cells: 80,668 | sparsity 98.64%</code></pre>
+<div class="box">Only <b>training</b> ratings go in. The 20% test ratings stay hidden until evaluation.</div>
+<p class="small">Unknown → 0 <i>after centring</i> means “no opinion” (it is the user’s average) — not “hated it”.</p></section>
+<section ><h2>Step 3 — Who are user 10&#x27;s neighbours?</h2>
+<pre><code class="language-python" data-trim data-noescape>S_uu = build_S_uu()                       # centred-cosine similarity, 610 × 610
+s = S_uu[u_idx[10]]; nn = np.argsort(-s)[:10]</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>neighbour  similarity  # movies in common  # ratings
+      173       0.109                   2         21
+      399       0.094                  10         30
+      443       0.085                   7         30
+      159       0.084                  19         70
+       59       0.084                   3         90
+      192       0.082                   2         14</code></pre>
+<div class="box warn"><b>Look carefully:</b> top similarities are tiny (~0.1) and rest on 2–19 shared movies. In sparse data, similarity is <b>unreliable</b>.</div></section>
+<section ><h2>Step 3b — What does user 10 like?</h2>
+<div class="cols"><div>
+<pre class="out"><code class="nohighlight" data-trim>User 10: 102 training ratings, mean 3.16
+Favourites (5★):
+ The Intern (2015)
+ Skyfall (2012)
+ The Dark Knight Rises (2012)
+ The Notebook (2004)
+ Troy (2004)
+ First Daughter (2004)
+ Despicable Me (2010)
+ The King&#x27;s Speech (2010)</code></pre></div>
+<div><div class="box">A <b>mainstream-2000s taste</b>: romance, family, blockbuster action.<br>We can now judge whether recommendations <i>make sense</i> — the most important sanity check in a recsys.</div>
+<p class="small">Habit: always look at a real user’s history before trusting a metric.</p></div></div></section>
+<section ><h2>Step 4 — Predict and recommend</h2>
+<pre><code class="language-python" data-trim data-noescape>def predict_ui(s, j, k=20):
+    r = raters[j]                                   # users who rated movie j
+    sr = s[r]
+    if len(r) &gt; k: top = np.argpartition(-sr, k-1)[:k]; r, sr = r[top], sr[top]   # k most similar raters
+    pos = sr &gt; 0; r, sr = r[pos], sr[pos]            # positive similarity only
+    return (sr @ Rc[r, j]) / np.abs(sr).sum(), len(r)   # weighted avg of centred ratings</code></pre>
+$$\hat r_{ui}=\bar r_u+\frac{\sum_{v\in N_k(u,i)} s_{uv}(r_{vi}-\bar r_v)}{\sum_{v\in N_k(u,i)}|s_{uv}|}$$
+<p class="small"><b>N<sub>k</sub>(u,i)</b> = the k most similar users <i>who rated i</i>. Then: rank unrated movies by prediction, drop the unreliable ones.</p></section>
+<section ><h2>Step 5 — Top-5 for user 10</h2>
+<pre><code class="language-python" data-trim data-noescape>recommend_user_cf(10, k=20)</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>                                                  title  pred  #neighbours  #ratings
+For a Few Dollars More (1965)                     4.40      5        23
+Thank You for Smoking (2006)                      4.24      3        28
+Dog Day Afternoon (1975)                          4.10      7        27
+Fantasia (1940)                                   4.09     10        39
+Dr. Horrible&#x27;s Sing-Along Blog (2008)             4.08      6        20</code></pre>
+<div class="box ask"><b>Do they make sense?</b> Compare with your guess and with user 10’s favourites. Are they obviously “user 10” movies?</div></section>
+<section ><h2>Why we need support guards</h2>
+<div class="cols"><div><h3>With guards (min_pop=20, support≥3)</h3>
+<pre class="out"><code class="nohighlight" data-trim>For a Few Dollars More   4.40  (5 nb)
+Thank You for Smoking    4.24  (3 nb)
+Dog Day Afternoon        4.10  (7 nb)</code></pre></div>
+<div><h3>Without (min_pop=0, support≥1)</h3>
+<pre class="out"><code class="nohighlight" data-trim>The Jungle Book (2016)       5.0  (1 nb, 10 ratings)
+Submarine (2010)             5.0  (1 nb,  3 ratings)
+Bossa Nova (2000)            5.0  (1 nb,  1 rating)
+Call Me by Your Name (2017)  5.0  (1 nb,  4 ratings)</code></pre></div></div>
+<div class="box warn">A movie rated 5★ by <b>one</b> neighbour gets predicted 5.0 — the same “single 5★ = best ever” trap as Lab 1 §6b.<br><b>Rule:</b> require evidence (support) before you recommend.</div></section>
+<section ><h2>The k experiment: how many neighbours?</h2>
+<pre class="out"><code class="nohighlight" data-trim>--- k = 2 ---                                   pred  # used
+The Jungle Book (1967)                          4.77    2
+The Hobbit: An Unexpected Journey (2012)        4.73    2
+Monty Python&#x27;s Life of Brian (1979)             4.71    2
+--- k = 20 ---
+For a Few Dollars More (1965)                   4.40    5
+Thank You for Smoking (2006)                    4.24    3
+--- k = 50 ---  (identical to k = 20 !)</code></pre>
+<div class="box ask"><b>Why is k = 20 identical to k = 50?</b></div>
+<p class="small">Each candidate was rated by only 3–10 positively-similar users. If fewer than k neighbours rated a movie, a larger k changes nothing → <b>sparsity, not k, limits the neighbourhood.</b></p></section>
+<section ><h2>Step 6 — Item-based CF</h2>
+<div class="cols"><div>
+<pre><code class="language-python" data-trim data-noescape>S_item = (Xi.T @ Xi) / outer(nrm, nrm)   # adjusted cosine
+similar_movies(1)       # Toy Story</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>Toy Story 2 (1999)                   0.308
+Aladdin (1992)                       0.298
+Toy Story 3 (2010)                   0.282
+Finding Nemo (2003)                  0.277
+Wallace &amp; Gromit: Wrong Trousers     0.247
+The Incredibles (2004)               0.243</code></pre></div>
+<div><pre class="out"><code class="nohighlight" data-trim>The Matrix (1999) →
+Fight Club (1999)                    0.360
+Pulp Fiction (1994)                  0.314
+Memento (2000)                       0.313
+Star Wars V (1980)                   0.298
+Gattaca (1997)                       0.285</code></pre>
+<div class="box good"><b>No genre data was used.</b> These neighbours exist purely because the same people rated them alike.</div></div></div></section>
+<section ><h2>Item-based Top-5 for user 10</h2>
+<pre><code class="language-python" data-trim data-noescape>recommend_item_cf(10)</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>Father of the Bride Part II (1995)       3.77   (11 similar movies used)
+Ace Ventura: When Nature Calls (1995)    3.73   (16)
+Bend It Like Beckham (2002)              3.71   (20)
+Charlie&#x27;s Angels (2000)                  3.68   (20)
+Ice Age (2002)                           3.68   (20)</code></pre>
+<ul class="small"><li>Compare with user-based: <b>safer, “more of what you like”</b> (family comedy, romance, animation)</li><li>User 10’s favourites include <i>Despicable Me, The Notebook, First Daughter</i> → the list fits</li><li>Each prediction rests on 11–20 of the user’s <i>own</i> rated movies → better supported than the user-based list</li></ul></section>
+<section ><h2>Step 7 — Evaluation: does it beat baselines?</h2>
+<pre class="out"><code class="nohighlight" data-trim>                         RMSE     MAE   coverage
+baseline: global mean   1.0488  0.8316   100%
+baseline: user mean     0.9497  0.7386   100%
+baseline: item mean     0.9827  0.7604   100%
+user-based CF (k=20)    0.8871  0.6706    95%
+user-based CF (k=50)    0.8873  0.6711    95%
+item-based CF (k=20)    0.8756  0.6620    75%</code></pre>
+<ul><li>CF beats <b>every</b> baseline, but the gap to the user-mean baseline is only ≈ 0.06</li><li><b>Coverage</b>: where CF has no answer we fall back to the user mean (item-CF only covers movies with ≥ 10 ratings)</li></ul></section>
+<section ><h2>Effect of k on error</h2>
+<div class="cols"><div><img src="img/lab2_k_curve.png" style=""></div><div>
+<pre class="out"><code class="nohighlight" data-trim>k      RMSE
+1     1.0749   ← worse than the global mean!
+2     0.9713
+5     0.9088
+10    0.8909
+20    0.8871
+50    0.8873
+200   0.8884</code></pre>
+<ul class="small"><li>Error falls fast to k≈10–20, then <b>plateaus</b></li><li>One stranger (k=1) is a bad advisor</li><li>Tune k on a <b>validation</b> set, never on test</li></ul></div></div></section>
+<section ><h2>Step 8 — Cold start: pretend to be a new user</h2>
+<pre><code class="language-python" data-trim data-noescape>my_ratings = {&quot;Matrix&quot;: 5, &quot;Star Wars IV&quot;: 5, &quot;Alien&quot;: 4.5, &quot;Toy Story&quot;: 2}
+new_s = user_sims(vec)                       # similarity of my partial vector to all users
+recommend_from_sims(new_s, np.nanmean(vec), ~np.isnan(vec), k=30, n=8, min_pop=50)</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>Pulp Fiction (1994)                       4.97
+A Clockwork Orange (1971)                 4.93
+Dr. Strangelove (1964)                    4.92
+Casablanca (1942)                         4.90
+Goodfellas (1990)                         4.90
+The Godfather (1972)                      4.87</code></pre>
+<div class="cols small"><div><b>4 ratings → a plausible list.</b></div><div><b>0 ratings</b> → CF has nothing. Fallback: <b>popularity</b> (damped mean): Shawshank, Godfather, Raiders, Pulp Fiction…</div></div></section>
+<section ><h2>Your turn — exercises</h2>
+<div class="ex"><b>E1.</b> <code>build_S_uu(shrink=20 / 50)</code> — significance weighting. <i>Predict</i> first: will RMSE (k=20) improve? Then run it.</div>
+<div class="ex"><b>E2.</b> Explain the #1 recommendation for user 10: which neighbours drove it? What did they rate?</div>
+<div class="ex"><b>E3.</b> Compare recommendations for a light user and a power user (e.g. users 414, 599).</div>
+<details class="small"><summary>Answers</summary>E1: 0.8871 → 0.8898 (shrink 20) → 0.8927 (shrink 50): <b>no improvement</b> here. E2: top neighbour 75 (sim 0.08) rated it 5.0; others weaker. E3: expect the power user to get better-supported lists (more overlapping neighbours); the light user's neighbours rest on very few shared movies.</details></section>
+<section ><h2>What we just felt (→ next theory session)</h2>
+<table><tr><th>Observed in the lab</th><th>Name</th><th>Fix coming up</th></tr>
+<tr><td>Neighbours share 2–19 movies; k=20 = k=50</td><td>sparsity</td><td>compress to dense vectors</td></tr>
+<tr><td>5.0 predictions from 1 neighbour</td><td>unreliable evidence</td><td>regularisation</td></tr>
+<tr><td>Hand-built vector for the new user</td><td>cold start</td><td>content / hybrid</td></tr>
+<tr><td>610×610 and 1921×1921 similarity matrices</td><td>scalability</td><td>few latent factors</td></tr>
+<tr><td>User mean alone gets RMSE 0.95</td><td>biases</td><td>b<sub>u</sub>, b<sub>i</sub> in the model</td></tr></table>
+<p class="center big">🍽 Lunch 12:45–13:30 → <b>Matrix Factorization: SVD / ALS</b></p>
+<p class="center small"><i>“What if we discover hidden factors instead of comparing users one by one?”</i></p><div class="pipeline"><span class="">Raw data</span><span class="">EDA</span><span class="">Similarity</span><span class="">Collaborative filtering</span><span class="on">Matrix factorization</span><span class="">Prediction</span><span class="">Top-N</span><span class="">Evaluation</span></div></section>
+</div></div>
+<script src="vendor/reveal.js/dist/reveal.js"></script>
+<script src="vendor/reveal.js/plugin/highlight/highlight.js"></script>
+<script src="vendor/reveal.js/plugin/math/math.js"></script>
+<script>Reveal.initialize({hash:true,slideNumber:'c/t',width:1280,height:720,margin:0.04,center:false,transition:'fade',controls:true,progress:true,
+ katex:{local:'vendor/katex'},plugins:[RevealHighlight,RevealMath.KaTeX]});</script>
+</body></html>

@@ -1,0 +1,135 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab 1 — EDA</title>
+<link rel="stylesheet" href="vendor/reveal.js/dist/reset.css"><link rel="stylesheet" href="vendor/reveal.js/dist/reveal.css">
+<link rel="stylesheet" href="vendor/reveal.js/dist/theme/white.css"><link rel="stylesheet" href="vendor/reveal.js/plugin/highlight/monokai.css">
+<link rel="stylesheet" href="vendor/katex/dist/katex.min.css"><link rel="stylesheet" href="assets/acm.css"></head>
+<body><div class="reveal"><div class="slides">
+<section >
+<div class="title-slide"><p class="tiny">ACM Workshop · Recommender Systems · Day 1 · 09:45–10:45</p>
+<h1>Lab 1 — Ratings Data:<br>Preprocessing + EDA</h1>
+<p class="big">Understand the data the recommender will be built from.</p>
+<div class="cols small"><div>① Who are my users?<br>② What are my items?<br>③ What does the rating data look like?</div>
+<div>Notebook: <code class="inline">Lab1_EDA.ipynb</code><br>Data: MovieLens latest-small</div></div><div class="pipeline"><span class="on">Raw data</span><span class="on">EDA</span><span class="">Similarity</span><span class="">Collaborative filtering</span><span class="">Matrix factorization</span><span class="">Prediction</span><span class="">Top-N</span><span class="">Evaluation</span></div></div></section>
+<section ><h2>Setup check (5 min)</h2>
+<div class="cols"><div>
+<h3>Everyone should have</h3><ul><li>Python 3.9+ / Jupyter / Colab</li><li><code>pandas numpy matplotlib scikit-learn</code></li><li><code>scikit-surprise</code> (needed in Lab 3)</li><li>The workshop folder with <code>data/</code></li></ul></div>
+<div><pre><code class="language-python" data-trim data-noescape>import pandas as pd, numpy as np
+import matplotlib.pyplot as plt
+print(pd.__version__, np.__version__)
+import surprise; print(surprise.__version__)</code></pre>
+<div class="box warn">Surprise fails to <b>install</b> on some laptops → use Colab: <code>!pip install scikit-surprise</code> (or <code>numpy&lt;2</code>)</div></div></div></section>
+<section ><h2>Step 1 — Load the dataset</h2>
+<pre><code class="language-python" data-trim data-noescape>ratings = pd.read_csv(DATA / &quot;ratings.csv&quot;)
+movies  = pd.read_csv(DATA / &quot;movies.csv&quot;)
+ratings.head()</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>   userId  movieId  rating  timestamp
+0       1        1     4.0  964982703
+1       1        3     4.0  964981247
+2       1        6     4.0  964982224
+3       1       47     5.0  964983815
+4       1       50     5.0  964982931</code></pre>
+<p class="small"><b>MovieLens latest-small:</b> 100,836 ratings · 610 users · 9,724 movies · 1996–2018 · every user has ≥ 20 ratings</p></section>
+<section ><h2>Step 2 — Shape, types, counts</h2>
+<pre><code class="language-python" data-trim data-noescape>print(&quot;ratings:&quot;, ratings.shape, &quot;| movies:&quot;, movies.shape)
+ratings.info()
+n_users, n_items, n_ratings = ratings.userId.nunique(), ratings.movieId.nunique(), len(ratings)</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>ratings: (100836, 4) | movies: (9742, 3)
+users   : 610
+movies  : 9,724  (catalogue has 9,742; some are never rated)
+ratings : 100,836</code></pre>
+<div class="box warn"><b>Key insight:</b> 18 catalogue movies have <i>no ratings at all</i> → a collaborative model cannot recommend them.</div></section>
+<section ><h2>Step 3 — Data quality</h2>
+<pre><code class="language-python" data-trim data-noescape>ratings.isnull().sum()
+ratings.duplicated().sum()
+ratings.duplicated([&quot;userId&quot;, &quot;movieId&quot;]).sum()   # the important one
+ratings.describe().round(2)</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>missing values per column: all 0
+fully duplicated rows        : 0
+duplicate (user, movie) pairs: 0
+rating  min 0.5  25% 3.0  50% 3.5  75% 4.0  max 5.0  mean 3.50</code></pre>
+<div class="box ask"><b>Your turn (2 min):</b> Why check duplicates of the <i>pair</i> (user, movie) rather than whole rows?</div></section>
+<section ><h2>Step 4 — Rating distribution</h2>
+<div class="cols"><div><img src="img/lab1_rating_dist.png" style=""></div><div>
+<ul class="small"><li>Skewed positive: mode = <b>4.0</b>, mean = 3.50</li><li>Whole stars used more than half-stars</li><li>Few 0.5–1.5 ratings</li></ul>
+<div class="box warn"><b>Selection bias:</b> people rate what they chose to watch. 3.5 ≠ “average movie”.</div>
+<div class="box good">The global mean (3.5) is already a baseline. <b>Any model must beat it.</b></div></div></div></section>
+<section ><h2>Step 5 — Who are my users?</h2>
+<div class="cols"><div><img src="img/lab1_user_activity.png" style=""></div><div>
+<pre class="out"><code class="nohighlight" data-trim>count    610
+mean     165.3
+median    70.5
+min       20
+max     2698
+Top 10% of users → 48% of ratings</code></pre>
+<ul class="small"><li>Heavy-tailed: a few <b>power users</b></li><li>Typical user: ~70 ratings</li></ul></div></div></section>
+<section ><h2>Step 5b — Users differ in how they rate</h2>
+<div class="cols"><div><img src="img/lab1_user_mean.png" style=""></div><div>
+<ul><li>User means range from <b>1.3</b> to <b>5.0</b></li><li>Some users are generous, some harsh</li></ul>
+<div class="box good"><b>User bias.</b> A 4 from a harsh user means more than a 4 from a generous one.<br>→ Lab 2: <b>mean-centre</b> ratings<br>→ Lab 3: bias term <b>b<sub>u</sub></b></div></div></div></section>
+<section ><h2>Step 6 — What are my items? (the long tail)</h2>
+<div class="cols"><div><img src="img/lab1_long_tail.png" style=""></div><div>
+<pre class="out"><code class="nohighlight" data-trim>ratings per movie:
+  median 3 · mean 10.4 · max 329
+  35% of movies have exactly 1 rating
+Most rated: Forrest Gump (329),
+ Shawshank (317), Pulp Fiction (307)</code></pre>
+<ul class="small"><li>A few blockbusters, a very long tail</li><li>→ <b>popularity bias</b></li></ul></div></div></section>
+<section ><h2>Step 6b — Don&#x27;t trust averages without counts</h2>
+<div class="cols"><div><h3>Top-rated — no minimum count</h3>
+<pre class="out"><code class="nohighlight" data-trim>Lamerica (1994)              n=2   5.0
+Heidi Fleiss: Hollywood Madam n=2  5.0
+Awfully Big Adventure, An    n=1   5.0
+Live Nude Girls (1995)       n=1   5.0</code></pre></div>
+<div><h3>Top-rated — at least 50 ratings</h3>
+<pre class="out"><code class="nohighlight" data-trim>Shawshank Redemption  n=317  4.43
+Godfather, The        n=192  4.29
+Fight Club            n=218  4.27
+Cool Hand Luke        n=57   4.27</code></pre></div></div>
+<div class="box warn">A single 5★ makes a movie “the best ever”. Every recommender needs a <b>support threshold</b> or <b>shrinkage</b> — we use both in Lab 2.</div></section>
+<section ><h2>Step 7 — Cold start, quantified</h2>
+<pre><code class="language-python" data-trim data-noescape>for k in [1, 5, 10, 20]:
+    print(f&quot;movies with &lt;= {k:&gt;2} ratings: {(per_item &lt;= k).sum():&gt;5,} ({(per_item &lt;= k).mean():.1%})&quot;)</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>movies with &lt;=  1 ratings: 3,446  (35.4%)
+movies with &lt;=  5 ratings: 6,456  (66.4%)
+movies with &lt;= 10 ratings: 7,603  (78.2%)
+movies with &lt;= 20 ratings: 8,489  (87.3%)
+movies in the catalogue with ZERO ratings: 18</code></pre>
+<div class="box ask"><b>Pairs (2 min):</b> What should the system do for (a) a brand-new <i>user</i>? (b) a brand-new <i>movie</i>?</div></section>
+<section ><h2>Step 8 — The user–item matrix  ⭐</h2>
+<pre><code class="language-python" data-trim data-noescape>user_item = ratings.pivot_table(index=&quot;userId&quot;, columns=&quot;movieId&quot;, values=&quot;rating&quot;)
+print(user_item.shape)
+print(f&quot;sparsity: {1 - user_item.notna().sum().sum() / user_item.size:.2%} of the matrix is EMPTY&quot;)</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>(610, 9724)
+possible cells : 5,931,640
+observed cells :   100,836
+sparsity       : 98.30% of the matrix is EMPTY</code></pre>
+<img src="img/lab1_sparsity.png" style="max-height:330px"></section>
+<section ><h2>Step 9 — Train / test split (saved for Labs 2 &amp; 3)</h2>
+<pre><code class="language-python" data-trim data-noescape>from sklearn.model_selection import train_test_split
+train, test = train_test_split(ratings[[&quot;userId&quot;,&quot;movieId&quot;,&quot;rating&quot;]], test_size=0.2, random_state=42)
+train.to_csv(PROC/&quot;train.csv&quot;, index=False); test.to_csv(PROC/&quot;test.csv&quot;, index=False)</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>train: 80,668   test: 20,168
+test rows whose user  is unseen in train: 0
+test rows whose movie is unseen in train: 813 (4.0%)</code></pre>
+<ul class="small"><li>Same split in <b>every</b> lab → comparable RMSE numbers</li><li>4% of test ratings are on movies never seen in training = <b>cold start in the test set</b></li></ul></section>
+<section ><h2>Your turn — exercises (last 8 min)</h2>
+<div class="ex"><b>E1.</b> Which genre has the highest mean rating among genres with ≥ 1,000 ratings? The lowest?</div>
+<div class="ex"><b>E2.</b> The 5 harshest users (≥ 50 ratings). How would they distort a naive “average of neighbours” prediction?</div>
+<div class="ex"><b>E3.</b> What fraction of all ratings goes to the 100 most-rated movies?</div>
+<details class="small"><summary>Answers</summary>E1: War 3.81 (high) · Horror 3.26 (low). E2: users 139, 153, 567, 298, 517 (mean 2.1–2.4). E3: 16.1 %.</details></section>
+<section ><h2>Lab 1 recap → what we learned</h2>
+<table><tr><th>We found</th><th>It means</th><th>Where it matters</th></tr>
+<tr><td>98.3% of matrix empty</td><td>sparsity</td><td>Similarity (Lab 2), MF (Lab 3)</td></tr>
+<tr><td>Power users, long tail</td><td>popularity bias</td><td>Top-N lists, evaluation</td></tr>
+<tr><td>User &amp; item averages differ</td><td>biases</td><td>mean-centring, b<sub>u</sub>, b<sub>i</sub></td></tr>
+<tr><td>35% of movies: 1 rating</td><td>cold start</td><td>support thresholds, hybrids</td></tr>
+<tr><td>Global mean RMSE ≈ 1.05</td><td>baseline to beat</td><td>all later labs</td></tr></table>
+<p class="big center">☕ Break 10:45–11:00 → then <b>Collaborative Filtering</b> theory</p>
+<p class="center small"><i>“How can we fill those empty cells using other users’ behaviour?”</i></p><div class="pipeline"><span class="on">Raw data</span><span class="on">EDA</span><span class="on">Similarity</span><span class="">Collaborative filtering</span><span class="">Matrix factorization</span><span class="">Prediction</span><span class="">Top-N</span><span class="">Evaluation</span></div></section>
+</div></div>
+<script src="vendor/reveal.js/dist/reveal.js"></script>
+<script src="vendor/reveal.js/plugin/highlight/highlight.js"></script>
+<script src="vendor/reveal.js/plugin/math/math.js"></script>
+<script>Reveal.initialize({hash:true,slideNumber:'c/t',width:1280,height:720,margin:0.04,center:false,transition:'fade',controls:true,progress:true,
+ katex:{local:'vendor/katex'},plugins:[RevealHighlight,RevealMath.KaTeX]});</script>
+</body></html>

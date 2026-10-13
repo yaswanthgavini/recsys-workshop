@@ -1,0 +1,169 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab 3 — Matrix Factorization with Surprise</title>
+<link rel="stylesheet" href="vendor/reveal.js/dist/reset.css"><link rel="stylesheet" href="vendor/reveal.js/dist/reveal.css">
+<link rel="stylesheet" href="vendor/reveal.js/dist/theme/white.css"><link rel="stylesheet" href="vendor/reveal.js/plugin/highlight/monokai.css">
+<link rel="stylesheet" href="vendor/katex/dist/katex.min.css"><link rel="stylesheet" href="assets/acm.css"></head>
+<body><div class="reveal"><div class="slides">
+<section >
+<div class="title-slide"><p class="tiny">ACM Workshop · Recommender Systems · Day 1 · 14:15–15:45</p>
+<h1>Lab 3 — Matrix Factorization with Surprise</h1>
+<p class="big">Train SVD → predict → evaluate → open the model → Top-N → experiment</p>
+<div class="small">Notebook: <code class="inline">Lab3_Matrix_Factorization_SVD.ipynb</code> · main technical deliverable of Day 1</div>
+<div class="pipeline"><span class="">Raw data</span><span class="">EDA</span><span class="">Similarity</span><span class="">Collaborative filtering</span><span class="on">Matrix factorization</span><span class="on">Prediction</span><span class="on">Top-N</span><span class="on">Evaluation</span></div></div></section>
+<section ><h2>Step 0 — Check Surprise and load the split</h2>
+<div class="cols"><div>
+<pre><code class="language-python" data-trim data-noescape>from surprise import Dataset, Reader, SVD, BaselineOnly, accuracy
+import surprise; print(surprise.__version__)   # 1.1.5</code></pre>
+<div class="box warn">No <code>surprise</code>? <code>pip install "numpy&lt;2" scikit-surprise</code> or use Colab.</div></div>
+<div><ul><li>Same <code>train.csv</code> / <code>test.csv</code> as Labs 1–2</li><li>⇒ numbers are <b>comparable</b> with the CF models</li><li>Everyone should get the <b>same RMSE</b> to 4 decimals</li></ul></div></div></section>
+<section ><h2>Step 1 — Pandas → Surprise</h2>
+<pre><code class="language-python" data-trim data-noescape>reader = Reader(rating_scale=(0.5, 5.0))             # NOT (1, 5) — see Lab 1!
+data     = Dataset.load_from_df(train[[&quot;userId&quot;,&quot;movieId&quot;,&quot;rating&quot;]], reader)
+trainset = data.build_full_trainset()
+testset  = list(test[[&quot;userId&quot;,&quot;movieId&quot;,&quot;rating&quot;]].itertuples(index=False, name=None))</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>users: 610 | items: 8983 | ratings: 80668
+global mean μ: 3.5026
+first test tuple (uid, iid, true rating): (432, 77866, 4.5)</code></pre>
+<ul class="small"><li>Surprise renumbers ids internally (<i>inner ids</i> 0…n−1); <code>to_inner_uid</code>/<code>to_raw_iid</code> convert back</li><li>The test set is just a list of <code>(user, item, true rating)</code></li></ul></section>
+<section ><h2>Step 2 — Baselines: what must SVD beat?</h2>
+<pre><code class="language-python" data-trim data-noescape>run(&quot;random (NormalPredictor)&quot;, NormalPredictor())
+run(&quot;baseline  μ + b_u + b_i&quot;,  BaselineOnly())</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>                            RMSE     MAE
+random (NormalPredictor)  1.4255  1.1413
+baseline  μ + b_u + b_i   0.8824  0.6769</code></pre>
+$$\hat r_{ui}=\mu+b_u+b_i\qquad\text{(no personalisation beyond biases)}$$
+<div class="box warn">This <i>bias-only</i> model is already at RMSE 0.88. <b>Remember this number.</b></div></section>
+<section ><h2>Step 3 — Train SVD</h2>
+<pre><code class="language-python" data-trim data-noescape>svd = SVD(n_factors=50, n_epochs=20, lr_all=0.005, reg_all=0.02, random_state=42)
+svd.fit(trainset)
+predictions = svd.test(testset)
+print(predictions[0])</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>user: 432   item: 77866   r_ui = 4.50   est = 3.28   {&#x27;was_impossible&#x27;: False}</code></pre>
+<table><tr><th>parameter</th><th>role</th><th>maths</th></tr>
+<tr><td><code>n_factors</code></td><td>latent dimension</td><td>k in p<sub>u</sub>, q<sub>i</sub> ∈ ℝ<sup>k</sup></td></tr>
+<tr><td><code>n_epochs</code></td><td>SGD passes over the ratings</td><td>#updates</td></tr>
+<tr><td><code>lr_all</code></td><td>learning rate</td><td>step size γ</td></tr>
+<tr><td><code>reg_all</code></td><td>L2 regularisation</td><td>λ</td></tr></table></section>
+<section ><h2>Step 4 — Read the predictions</h2>
+<pre class="out"><code class="nohighlight" data-trim>userId  movieId  actual  predicted  title
+   535     2539     3.0      2.54    Analyze This (1999)
+   274    55765     4.0      3.56    American Gangster (2007)
+   182      899     5.0      4.00    Singin&#x27; in the Rain (1952)
+   391      111     5.0      4.36    Taxi Driver (1976)
+   217     1198     5.0      3.41    Raiders of the Lost Ark (1981)</code></pre>
+<img src="img/lab3_pred_vs_actual.png" style="max-height:300px"></section>
+<section ><h2>Step 5 — Evaluate: RMSE and MAE</h2>
+<pre><code class="language-python" data-trim data-noescape>accuracy.rmse(predictions); accuracy.mae(predictions)</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>                            RMSE     MAE
+random                    1.4255  1.1413
+baseline  μ + b_u + b_i   0.8824  0.6769
+SVD (50 factors)          0.8808  0.6739
+user-KNN (k=40, Pearson)  0.9042  0.6863
+item-KNN (k=40, cosine)   0.9141  0.6961</code></pre>
+<div class="box warn"><b>Honest reading:</b> SVD ≈ baseline (−0.0016 RMSE). On small data the bias terms capture most of the signal. Don’t over-sell a 0.002 gain.</div>
+<p class="small">Our Lab-2 NumPy CF: user 0.8871 · item 0.8756 (covers 75% of test pairs).</p></section>
+<section ><h2>Step 6 — Open the model: R ≈ PQᵀ</h2>
+<pre><code class="language-python" data-trim data-noescape>print(svd.pu.shape, svd.qi.shape)         # P: users×k,  Q: items×k
+manual = μ + svd.bu[iu] + svd.bi[ii] + svd.pu[iu] @ svd.qi[ii]</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>P (users×factors): (610, 50) | Q (items×factors): (8983, 50)
+Parameters learned: 489,243   vs the full matrix: 5,479,630
+
+user 10 × &#x27;Toy Story (1995)&#x27;:  by hand = 3.5221   svd.predict = 3.5221
+   μ=3.50   b_u=-0.45   b_i=+0.39   p_u·q_i=+0.08</code></pre>
+<div class="box good">Prediction = <b>global mean</b> + <b>user habit</b> (−0.45: harsh) + <b>movie quality</b> (+0.39: well liked) + <b>taste match</b> (+0.08).<br>The model stores ~9% of the numbers of the full matrix — and can predict <b>every</b> cell.</div></section>
+<section ><h2>Biases &amp; latent factors: what did it learn?</h2>
+<div class="cols"><div><h3>Highest item bias <i>b<sub>i</sub></i></h3>
+<pre class="out"><code class="nohighlight" data-trim>Shawshank Redemption   +0.90
+Casablanca             +0.84
+Dr. Strangelove        +0.83
+Rear Window            +0.83
+Amélie                 +0.77</code></pre>
+<h3>Lowest</h3><pre class="out"><code class="nohighlight" data-trim>Judge Dredd            −0.79
+The Nutty Professor    −0.77
+Ace Ventura 2          −0.67
+Mission: Impossible II −0.66
+Charlie&#x27;s Angels       −0.62</code></pre></div>
+<div><h3>Nearest to <i>The Matrix</i> in Q-space</h3>
+<pre class="out"><code class="nohighlight" data-trim>Saving Private Ryan        0.53
+Star Wars V                0.52
+Raiders of the Lost Ark    0.49
+Almost Famous              0.47
+Jurassic Park              0.45
+Dr. Strangelove            0.45</code></pre>
+<div class="box warn">Latent axes are <b>not</b> genres. Any rotation of P and Q gives the same predictions → only geometry (who is near whom) is meaningful.</div></div></div></section>
+<section ><h2>Step 7 — Top-N recommendations</h2>
+<pre><code class="language-python" data-trim data-noescape>def top_n(algo, uid, n=5, min_pop=20):
+    seen = {raw item ids the user rated}
+    cands = [i for i in all_items if i not in seen and n_ratings[i] &gt;= min_pop]
+    scored = sorted(((i, algo.predict(uid, i).est) for i in cands), key=lambda t: -t[1])[:n]</code></pre>
+<div class="cols"><div><p class="small"><b>User → candidates → predict each → sort → Top-N</b></p>
+<pre class="out"><code class="nohighlight" data-trim>=== user 10 (102 ratings) ===
+Philadelphia Story, The (1940)   3.96
+Toy Story 3 (2010)               3.89
+The Apartment (1960)             3.87
+Young Frankenstein (1974)        3.86
+For a Few Dollars More (1965)    3.85</code></pre></div>
+<div><pre class="out"><code class="nohighlight" data-trim>=== user 414 (2122 ratings) ===
+Saving Private Ryan   4.34
+The Usual Suspects    4.34
+The Departed          4.33
+Apocalypse Now        4.32
+Annie Hall            4.31
+
+=== user 77 (21 ratings) ===
+A Grand Day Out (W&amp;G) 4.44
+Dr. Strangelove       4.37
+Amélie                4.31</code></pre></div></div></section>
+<section ><h2>Step 8 — Experiment: how many latent factors?</h2>
+<div class="cols"><div>
+<pre class="out"><code class="nohighlight" data-trim>n_factors   RMSE (mean ± std, 5 seeds)
+    5       0.8793 ± 0.0010
+   20       0.8791 ± 0.0012
+   50       0.8805 ± 0.0006
+  100       0.8828 ± 0.0009
+  200       0.8882 ± 0.0017</code></pre>
+<div class="box ask">Does more factors ⇒ better performance?</div></div>
+<div><img src="img/lab3_nfactors.png" style="max-height:330px"></div></div>
+<p class="small"><b>No.</b> Flat, then <i>rising</i>: more capacity ⇒ more overfitting on ~130 ratings/user and ~8/movie. Differences of 0.001 are within seed noise → always repeat.</p></section>
+<section ><h2>Tuning: regularisation matters more than k</h2>
+<pre><code class="language-python" data-trim data-noescape>grid = {&quot;n_factors&quot;:[20,50], &quot;n_epochs&quot;:[20,40], &quot;lr_all&quot;:[0.005,0.01], &quot;reg_all&quot;:[0.02,0.05,0.1]}
+gs = GridSearchCV(SVD, grid, measures=[&quot;rmse&quot;], cv=3).fit(data)    # CV on TRAIN only</code></pre>
+<pre class="out"><code class="nohighlight" data-trim>best CV RMSE: 0.8700  {n_factors: 50, n_epochs: 40, lr_all: 0.01, reg_all: 0.1}
+
+                            RMSE     MAE
+baseline  μ + b_u + b_i   0.8824  0.6769
+SVD (50 factors, default)  0.8808  0.6739
+SVD tuned (CV on train)    0.8621  0.6598     ← test set touched once</code></pre>
+<ul class="small"><li><code>reg_all</code> 0.02 → 0.1 gave the gain; every top configuration has reg 0.1</li><li><b>Never tune on the test set.</b> Cross-validation inside train; test is the final exam</li></ul></section>
+<section ><h2>Step 9 — Prediction ≠ Top-N recommendation</h2>
+<pre class="out"><code class="nohighlight" data-trim>                               Precision@10  Recall@10
+popularity (non-personalised)        0.1173     0.0860
+SVD (50 factors)                     0.0593     0.0384
+SVD tuned                            0.0537     0.0381</code></pre>
+<p class="small">Relevant = test rating ≥ 4 · candidates = movies with ≥ 20 training ratings · 300 users</p>
+<div class="box warn"><b>The best RMSE model does <u>not</u> win the top-10 list!</b> Popularity is a brutal baseline: (1) SVD optimises rating <i>error</i>, not ranking; (2) niche items can have inflated predictions; (3) “not in test” ≠ “disliked” (data is missing-not-at-random).</div>
+<p class="small">Try: candidates with ≥ 100 ratings, or blend SVD score with popularity.</p></section>
+<section ><h2>Optional — ALS from scratch (take-home)</h2>
+<div class="cols"><div>
+$$p_u=\Big(\sum_{i\in\Omega_u} q_i q_i^\top+\lambda I\Big)^{-1}\sum_{i\in\Omega_u} r_{ui}\,q_i$$
+<p class="small">fix Q → solve every p<sub>u</sub> (ridge regression)<br>fix P → solve every q<sub>i</sub><br>repeat — no learning rate</p></div>
+<div><pre class="out"><code class="nohighlight" data-trim>ALS (k=20, λ=10): test RMSE = 0.9124   MAE = 0.7038
+train RMSE per sweep:
+0.990 0.715 0.663 0.647 0.640 0.635 0.632 0.630
+0.628 0.627 0.626 0.625   ← monotone decrease</code></pre>
+<p class="small">No bias terms ⇒ worse than biased SVD (0.881). <b>Exercise:</b> add b<sub>u</sub>, b<sub>i</sub>; try λ ∈ {1, 10, 30}.</p></div></div></section>
+<section ><h2>Final challenge</h2>
+<div class="box big"><b>For a given user, recommend five movies the user has not rated.</b></div>
+<pre><code class="language-python" data-trim data-noescape>def recommend(user_id, n=5):
+    ...   # your code: any model from today
+
+recommend(10)</code></pre>
+<ul><li>Return <b>titles</b>, not ids</li><li>Exclude movies the user has already rated</li><li>One sentence: <i>why did you choose that model?</i></li></ul>
+<p class="small">Sample solution: <code>top_n(best, user_id, n)["title"].tolist()</code></p></section>
+</div></div>
+<script src="vendor/reveal.js/dist/reveal.js"></script>
+<script src="vendor/reveal.js/plugin/highlight/highlight.js"></script>
+<script src="vendor/reveal.js/plugin/math/math.js"></script>
+<script>Reveal.initialize({hash:true,slideNumber:'c/t',width:1280,height:720,margin:0.04,center:false,transition:'fade',controls:true,progress:true,
+ katex:{local:'vendor/katex'},plugins:[RevealHighlight,RevealMath.KaTeX]});</script>
+</body></html>

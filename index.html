@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recommender Systems Workshop · Day 1</title>
+<style>
+:root{--bg:#f7f8fb;--card:#fff;--ink:#1b2333;--mute:#5b6679;--acc:#0a5cad;--acc2:#e8f1fb;--line:#dde3ee;--brk:#fff6e0}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1420;--card:#171e2e;--ink:#e8ecf4;--mute:#9aa6bc;--acc:#6db1ff;--acc2:#1a2a44;--line:#2a3550;--brk:#2b2614}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:linear-gradient(135deg,#0a3d7a,#0a5cad);color:#fff;padding:48px 16px 40px}
+.w{max-width:960px;margin:0 auto;padding:0 16px}
+header .w{padding:0}
+h1{margin:0 0 6px;font-size:clamp(1.6rem,4vw,2.4rem)}
+header p{margin:4px 0;opacity:.92}
+.pill{display:inline-block;background:rgba(255,255,255,.18);border-radius:99px;padding:2px 12px;font-size:.85rem;margin:10px 6px 0 0}
+nav{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--line);z-index:5}
+nav .w{display:flex;gap:20px;padding:10px 16px;overflow-x:auto}
+nav a{color:var(--acc);text-decoration:none;font-weight:600;white-space:nowrap}
+section{padding:32px 0 8px}
+h2{margin:0 0 14px;font-size:1.5rem}
+.tw{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:620px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--acc2);font-size:.85rem;text-transform:uppercase;letter-spacing:.04em}
+tr:last-child td{border-bottom:0}
+td.t{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600}
+tr.brk td{background:var(--brk);color:var(--mute)}
+.tag{font-size:.75rem;border-radius:6px;padding:1px 8px;background:var(--acc2);color:var(--acc);font-weight:600;white-space:nowrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.card h3{margin:0 0 8px;font-size:1.05rem}
+.card ul{margin:0;padding-left:0;list-style:none}
+.card li{padding:5px 0;border-top:1px solid var(--line)}
+.card li:first-child{border-top:0}
+.card small{color:var(--mute);display:block}
+a{color:var(--acc)}
+code{background:var(--acc2);padding:1px 6px;border-radius:5px;font-size:.9em}
+pre{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto;margin:10px 0}
+footer{padding:28px 16px 40px;color:var(--mute);font-size:.9rem}
+</style>
+</head>
+<body>
+<header><div class="w">
+  <h1>Recommender Systems Workshop</h1>
+  <p>Day 1 · From ratings to working recommenders</p>
+  <span class="pill">12 October 2026</span><span class="pill">GITAM Hyderabad</span><span class="pill">ACM Student Chapter</span>
+  <p style="margin-top:14px">Resource persons: Dr. Sowmini Devi Veeramachaneni (Mahindra University) · Dr. Yaswanth Gavini (GITAM)</p>
+</div></header>
+<nav><div class="w"><a href="#schedule">Schedule</a><a href="#resources">Resources</a><a href="#setup">Setup</a><a href="#data">Data</a></div></nav>
+
+<main class="w">
+<section id="schedule">
+  <h2>Day 1 schedule</h2>
+  <p>By the end of the day you will have built and compared similarity-based collaborative filtering and SVD recommenders on a real ratings dataset in Python.</p>
+  <div class="tw"><table>
+    <tr><th>Time</th><th>Type</th><th>Session</th></tr>
+    <tr><td class="t">08:30–09:00</td><td><span class="tag">Opening</span></td><td>Inauguration, ACM introduction, membership desk</td></tr>
+    <tr><td class="t">09:00–09:45</td><td><span class="tag">Theory</span></td><td>Introduction to recommender systems: types, applications</td></tr>
+    <tr><td class="t">09:45–10:45</td><td><span class="tag">Lab 1</span></td><td>Data preprocessing and EDA on a ratings dataset (Python / pandas)</td></tr>
+    <tr class="brk"><td class="t">10:45–11:00</td><td>Break</td><td>Tea break · volunteers help with installs</td></tr>
+    <tr><td class="t">11:00–11:45</td><td><span class="tag">Theory</span></td><td>Collaborative filtering: user-based and item-based</td></tr>
+    <tr><td class="t">11:45–12:45</td><td><span class="tag">Lab 2</span></td><td>Build a working CF recommender</td></tr>
+    <tr class="brk"><td class="t">12:45–13:30</td><td>Lunch</td><td>Lunch break</td></tr>
+    <tr><td class="t">13:30–14:15</td><td><span class="tag">Theory</span></td><td>Matrix factorization (SVD / ALS)</td></tr>
+    <tr><td class="t">14:15–15:45</td><td><span class="tag">Lab 3</span></td><td>Matrix factorization recommender with Surprise</td></tr>
+    <tr><td class="t">15:45–16:00</td><td><span class="tag">Wrap-up</span></td><td>Day 1 wrap-up, assessment and Q&amp;A</td></tr>
+  </table></div>
+</section>
+
+<section id="resources">
+  <h2>Resources</h2>
+  <div class="grid">
+    <div class="card"><h3>Slides</h3><ul>
+      <li><a href="resources/theory/01_intro_recsys.pdf">1 · Introduction to recommender systems</a><small>What, why, types, rating matrix, sparsity</small></li>
+      <li><a href="resources/theory/02_collaborative_filtering.pdf">2 · Collaborative filtering</a><small>Cosine, Pearson, user- and item-based prediction</small></li>
+      <li><a href="resources/theory/03_matrix_factorization.pdf">3 · Matrix factorization</a><small>SVD, biases, SGD, ALS, RMSE / MAE</small></li>
+      <li><a href="resources/theory/04_Ratings_to_Recommendations_Sowmini.pdf">4 · From Ratings to Recommendations</a><small>Dr. Sowmini Devi Veeramachaneni, full session deck</small></li>
+    </ul></div>
+    <div class="card"><h3>Lab slides</h3><ul>
+      <li><a href="labs/lab1.html">Lab 1 · Preprocessing + EDA</a></li>
+      <li><a href="labs/lab2.html">Lab 2 · Collaborative filtering</a></li>
+      <li><a href="labs/lab3.html">Lab 3 · Matrix factorization with Surprise</a></li>
+      <li><a href="labs/wrapup.html">Wrap-up and assessment</a><small>Use arrow keys; F for fullscreen</small></li>
+    </ul></div>
+    <div class="card"><h3>Lab notebooks</h3><ul>
+      <li><a href="resources/notebooks/Lab1_EDA.ipynb">Lab 1 · EDA</a><small>Load, quality checks, distributions, long tail, split</small></li>
+      <li><a href="resources/notebooks/Lab2_Collaborative_Filtering.ipynb">Lab 2 · Collaborative filtering</a><small>Run Lab 1 first: it saves the train/test split</small></li>
+      <li><a href="resources/notebooks/Lab3_Matrix_Factorization_SVD.ipynb">Lab 3 · SVD with Surprise</a><small>Needs scikit-surprise</small></li>
+      <li><a href="resources/notebooks/Day1_Recommender.ipynb">Combined Day 1 notebook</a></li>
+      <li><a href="resources/notebooks/student_notebooks.zip">Download all notebooks (.zip)</a></li>
+    </ul></div>
+    <div class="card"><h3>Practice code</h3><ul>
+      <li><a href="resources/code/recsys_simple_code.zip">17 short Python scripts (.zip)</a><small>One idea per file, from data exploration to ALS. Run <code>run_all.py</code> to execute them all.</small></li>
+      <li><a href="resources/SETUP.md">SETUP.md</a><small>Install guide and fixes</small></li>
+      <li><a href="resources/requirements.txt">requirements.txt</a></li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="setup">
+  <h2>Setup (≈10 minutes)</h2>
+  <p>Python 3.9 or newer. Choose one route.</p>
+  <div class="grid">
+    <div class="card"><h3>Route A · Your laptop</h3>
+<pre>python3 -m venv recsys
+source recsys/bin/activate
+pip install -r requirements.txt
+jupyter lab</pre>
+      <small>Windows: <code>recsys\Scripts\activate</code></small></div>
+    <div class="card"><h3>Route B · Google Colab</h3>
+      <p>Upload the notebook, then run this in the first cell and restart the session:</p>
+<pre>!pip install -q "numpy&lt;2" scikit-surprise</pre></div>
+  </div>
+  <p>If <code>scikit-surprise</code> fails: <code>pip install "numpy&lt;2" scikit-surprise</code>, or on Windows <code>conda install -c conda-forge scikit-surprise</code>. Labs 1 and 2 do not need Surprise.</p>
+</section>
+
+<section id="data">
+  <h2>Dataset</h2>
+  <p>We use <a href="https://grouplens.org/datasets/movielens/">MovieLens <em>latest-small</em></a> (100,836 ratings, 610 users, 9,724 movies). The notebooks download it automatically if it is missing. It is for research and education only and is not hosted here.</p>
+</section>
+</main>
+
+<footer><div class="w">
+  ACM Student Chapter, GITAM Hyderabad · Supported by ACM India ABF.<br>
+  Data: F. M. Harper and J. A. Konstan, <em>The MovieLens Datasets: History and Context</em>, ACM TiiS 5(4), 2015. Surprise: N. Hug, JOSS 5(52), 2020.
+</div></footer>
+</body>
+</html>

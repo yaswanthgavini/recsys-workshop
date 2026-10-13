@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 1 Wrap-up</title>
+<link rel="stylesheet" href="vendor/reveal.js/dist/reset.css"><link rel="stylesheet" href="vendor/reveal.js/dist/reveal.css">
+<link rel="stylesheet" href="vendor/reveal.js/dist/theme/white.css"><link rel="stylesheet" href="vendor/reveal.js/plugin/highlight/monokai.css">
+<link rel="stylesheet" href="vendor/katex/dist/katex.min.css"><link rel="stylesheet" href="assets/acm.css"></head>
+<body><div class="reveal"><div class="slides">
+<section ><div class="title-slide"><p class="tiny">ACM Workshop · Recommender Systems · Day 1 · 15:45–16:00</p>
+<h1>Day 1 Wrap-up</h1><p class="big">Outcome assessment — not just Q&amp;A</p><div class="pipeline"><span class="on">Raw data</span><span class="on">EDA</span><span class="on">Similarity</span><span class="on">Collaborative filtering</span><span class="on">Matrix factorization</span><span class="on">Prediction</span><span class="on">Top-N</span><span class="on">Evaluation</span></div></div></section>
+<section ><h2>What we built today</h2><div class="pipeline"><span class="on">Raw data</span><span class="on">EDA</span><span class="on">Similarity</span><span class="on">Collaborative filtering</span><span class="on">Matrix factorization</span><span class="on">Prediction</span><span class="on">Top-N</span><span class="on">Evaluation</span></div>
+<table><tr><th>Session</th><th>Output</th></tr>
+<tr><td>Lab 1</td><td>EDA: users, items, rating distribution, sparsity (98.3%), train/test split</td></tr>
+<tr><td>Lab 2</td><td>User- and item-based CF; Top-5 for user 10; RMSE 0.887 / 0.876</td></tr>
+<tr><td>Lab 3</td><td>SVD: P, Q, biases; RMSE 0.881 → 0.862 tuned; Top-N; n_factors experiment</td></tr></table>
+<div class="box good">Baselines matter: global mean 1.049 → user mean 0.950 → bias model 0.882 → tuned SVD 0.862.</div></section>
+<section ><h2>Q1 — What is the basic problem solved by a recommender system?</h2><p class="big center" style="margin-top:2em">Discuss with your neighbour — 30 seconds</p><p class="center tiny">(answer is in the speaker notes)</p></section>
+<section ><h2>Q2 — User-based vs item-based collaborative filtering?</h2><p class="big center" style="margin-top:2em">Discuss with your neighbour — 30 seconds</p><p class="center tiny">(answer is in the speaker notes)</p></section>
+<section ><h2>Q3 — Why is the user-item matrix sparse?</h2><p class="big center" style="margin-top:2em">Discuss with your neighbour — 30 seconds</p><p class="center tiny">(answer is in the speaker notes)</p></section>
+<section ><h2>Q4 — What does R ≈ P Qᵀ mean?</h2><p class="big center" style="margin-top:2em">Discuss with your neighbour — 30 seconds</p><p class="center tiny">(answer is in the speaker notes)</p></section>
+<section ><h2>Q5 — Rating prediction vs Top-N recommendation?</h2><p class="big center" style="margin-top:2em">Discuss with your neighbour — 30 seconds</p><p class="center tiny">(answer is in the speaker notes)</p></section>
+<section ><h2>Final challenge</h2><div class="box big"><b>For a given user, build a recommender that recommends five movies the user has not rated.</b></div>
+<ul><li>Any model from today · titles, not ids · exclude already-rated movies</li><li>Share one list + one sentence of justification</li></ul>
+<h3>Day-1 deliverables</h3><table><tr><th>#</th><th>Deliverable</th><th>✓</th></tr>
+<tr><td>1</td><td>EDA notebook</td><td>□</td></tr><tr><td>2</td><td>User/item similarity</td><td>□</td></tr>
+<tr><td>3</td><td>CF recommender (Top-N)</td><td>□</td></tr><tr><td>4</td><td>SVD model (R ≈ PQᵀ)</td><td>□</td></tr>
+<tr><td>5</td><td>Complete recommender + RMSE/MAE</td><td>□</td></tr></table></section>
+</div></div>
+<script src="vendor/reveal.js/dist/reveal.js"></script>
+<script src="vendor/reveal.js/plugin/highlight/highlight.js"></script>
+<script src="vendor/reveal.js/plugin/math/math.js"></script>
+<script>Reveal.initialize({hash:true,slideNumber:'c/t',width:1280,height:720,margin:0.04,center:false,transition:'fade',controls:true,progress:true,
+ katex:{local:'vendor/katex'},plugins:[RevealHighlight,RevealMath.KaTeX]});</script>
+</body></html>
