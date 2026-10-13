@@ -5,16 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Recommender Systems Workshop · Day 1</title>
 <style>
-:root{--bg:#f7f8fb;--card:#fff;--ink:#1b2333;--mute:#5b6679;--acc:#0a5cad;--acc2:#e8f1fb;--line:#dde3ee;--brk:#fff6e0}
-@media (prefers-color-scheme:dark){:root{--bg:#0f1420;--card:#171e2e;--ink:#e8ecf4;--mute:#9aa6bc;--acc:#6db1ff;--acc2:#1a2a44;--line:#2a3550;--brk:#2b2614}}
+:root{--bg:#f6f4ee;--card:#fffdf8;--ink:#12302b;--mute:#4f6a64;--acc:#006b5e;--acc2:#e3f0ec;--line:#d9e3de;--brk:#fdf1d3;--gold:#f6c667;--deep:#00362f}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1f1c;--card:#112b27;--ink:#e8f3f0;--mute:#9bb8b1;--acc:#5fd3bf;--acc2:#16342f;--line:#24453f;--brk:#2e2a14}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{background:linear-gradient(135deg,#0a3d7a,#0a5cad);color:#fff;padding:48px 16px 40px}
+header{background:radial-gradient(circle at 78% 40%,#0a8a78 0%,#006b5e 38%,#00362f 100%);color:#fff;padding:28px 16px 40px}
 .w{max-width:960px;margin:0 auto;padding:0 16px}
 header .w{padding:0}
 h1{margin:0 0 6px;font-size:clamp(1.6rem,4vw,2.4rem)}
 header p{margin:4px 0;opacity:.92}
-.pill{display:inline-block;background:rgba(255,255,255,.18);border-radius:99px;padding:2px 12px;font-size:.85rem;margin:10px 6px 0 0}
+.pill{display:inline-block;background:var(--gold);color:var(--deep);border-radius:99px;padding:4px 14px;font-size:.85rem;font-weight:700;margin:10px 6px 0 0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:26px}
+.logo{background:#fcf9f3;border-radius:22px;padding:8px 14px;display:flex;align-items:center}
+.logo img{height:46px;width:auto;display:block}
+.chap{color:var(--gold);font-weight:700;letter-spacing:.18em;text-transform:uppercase;font-size:.8rem;text-align:center;line-height:1.4}
+.kick{display:inline-block;background:var(--gold);color:var(--deep);font-weight:800;letter-spacing:.14em;padding:6px 18px;border-radius:30px;font-size:.85rem}
+header h1 span{color:var(--gold)}
+.tagline{font-style:italic;font-size:1.1rem;color:#e9f5f2}
+.poster{margin:0 0 8px}
+.poster img{width:100%;height:auto;border-radius:14px;border:1px solid var(--line);display:block}
+.hod{color:var(--mute);font-size:.9rem}
+@media (max-width:560px){.top{flex-wrap:wrap}.chap{order:3;width:100%}.logo{padding:6px 10px;border-radius:16px}.logo img{height:32px}}
 nav{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--line);z-index:5}
 nav .w{display:flex;gap:20px;padding:10px 16px;overflow-x:auto}
 nav a{color:var(--acc);text-decoration:none;font-weight:600;white-space:nowrap}
@@ -23,7 +34,7 @@ h2{margin:0 0 14px;font-size:1.5rem}
 .tw{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
 table{border-collapse:collapse;width:100%;min-width:620px}
 th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
-th{background:var(--acc2);font-size:.85rem;text-transform:uppercase;letter-spacing:.04em}
+th{background:var(--acc2);color:var(--ink);font-size:.85rem;text-transform:uppercase;letter-spacing:.04em}
 tr:last-child td{border-bottom:0}
 td.t{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600}
 tr.brk td{background:var(--brk);color:var(--mute)}
@@ -43,14 +54,24 @@ footer{padding:28px 16px 40px;color:var(--mute);font-size:.9rem}
 </head>
 <body>
 <header><div class="w">
-  <h1>Recommender Systems Workshop</h1>
-  <p>Two-day hands-on workshop · From ratings to working recommenders</p>
-  <span class="pill">12–13 October 2026</span><span class="pill">GITAM Hyderabad</span><span class="pill">ACM Student Chapter</span>
-  <p style="margin-top:14px">Day 1: Dr. Sowmini Devi Veeramachaneni (Mahindra University) · Dr. Yaswanth Gavini (GITAM)<br>Day 2: Dr. Abinash Pujahari · Dr. Jyothimon C</p>
+  <div class="top"><div class="logo"><img src="assets/acm_logo.png" alt="ACM Chapter Event"></div>
+    <div class="chap">GITAM Hyderabad<br>ACM Student Chapter</div>
+    <div class="logo"><img src="assets/gitam_logo.png" alt="GITAM School of Computer Science and Engineering"></div></div>
+  <span class="kick">ACM HANDS-ON WORKSHOP</span>
+  <h1>RECOMMENDER <span>SYSTEMS</span></h1>
+  <p class="tagline">&ldquo;Build the Engines Behind Netflix, Amazon &amp; Spotify&rdquo;</p>
+  <span class="pill">12–13 October 2026</span><span class="pill">8:30 AM – 4:00 PM</span><span class="pill">GITAM, Rudraram, Hyderabad</span>
 </div></header>
 <nav><div class="w"><a href="#day1">Day 1</a><a href="#day2">Day 2</a><a href="#setup">Setup</a><a href="#data">Dataset</a></div></nav>
 
 <main class="w">
+<section id="about">
+  <figure class="poster"><img src="assets/poster.jpg" alt="Workshop poster: Recommender Systems, 12–13 October 2026, GITAM Hyderabad"></figure>
+  <div class="grid" style="margin-top:14px">
+    <div class="card"><h3>Day 1 · 12 October</h3><small style="display:block">Dr. Sowmini Devi Veeramachaneni, Mahindra University<br>Dr. Yaswanth Gavini, GITAM Hyderabad</small></div>
+    <div class="card"><h3>Day 2 · 13 October</h3><small style="display:block">Dr. Abinash Pujahari, Mahindra University<br>Dr. Jyothimon C, GITAM Hyderabad</small></div>
+  </div>
+</section>
 <section id="day1">
   <h2>Day 1 · 12 October · Schedule</h2>
   <p>By the end of the day you will have built and compared similarity-based collaborative filtering and SVD recommenders on a real ratings dataset in Python.</p>
@@ -154,7 +175,8 @@ jupyter lab</pre>
 </main>
 
 <footer><div class="w">
-  ACM Student Chapter, GITAM Hyderabad · Supported by ACM India ABF.<br>
+  Organised by <strong>GITAM Hyderabad ACM Student Chapter</strong> · Supported by ACM India ABF.<br>
+  <span class="hod">Heads of the Departments: Dr. V Sireesha · Prof. Shaik Mahaboob Basha</span><br>
   Data: F. M. Harper and J. A. Konstan, <em>The MovieLens Datasets: History and Context</em>, ACM TiiS 5(4), 2015. Surprise: N. Hug, JOSS 5(52), 2020.
 </div></footer>
 </body>
