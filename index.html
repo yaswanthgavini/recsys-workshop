@@ -44,15 +44,15 @@ footer{padding:28px 16px 40px;color:var(--mute);font-size:.9rem}
 <body>
 <header><div class="w">
   <h1>Recommender Systems Workshop</h1>
-  <p>Day 1 · From ratings to working recommenders</p>
-  <span class="pill">12 October 2026</span><span class="pill">GITAM Hyderabad</span><span class="pill">ACM Student Chapter</span>
-  <p style="margin-top:14px">Resource persons: Dr. Sowmini Devi Veeramachaneni (Mahindra University) · Dr. Yaswanth Gavini (GITAM)</p>
+  <p>Two-day hands-on workshop · From ratings to working recommenders</p>
+  <span class="pill">12–13 October 2026</span><span class="pill">GITAM Hyderabad</span><span class="pill">ACM Student Chapter</span>
+  <p style="margin-top:14px">Day 1: Dr. Sowmini Devi Veeramachaneni (Mahindra University) · Dr. Yaswanth Gavini (GITAM)<br>Day 2: Dr. Abinash Pujahari · Dr. Jyothimon C</p>
 </div></header>
-<nav><div class="w"><a href="#schedule">Schedule</a><a href="#resources">Resources</a><a href="#setup">Setup</a><a href="#data">Data</a></div></nav>
+<nav><div class="w"><a href="#day1">Day 1</a><a href="#day2">Day 2</a><a href="#setup">Setup</a><a href="#data">Dataset</a></div></nav>
 
 <main class="w">
-<section id="schedule">
-  <h2>Day 1 schedule</h2>
+<section id="day1">
+  <h2>Day 1 · 12 October · Schedule</h2>
   <p>By the end of the day you will have built and compared similarity-based collaborative filtering and SVD recommenders on a real ratings dataset in Python.</p>
   <div class="tw"><table>
     <tr><th>Time</th><th>Type</th><th>Session</th></tr>
@@ -69,8 +69,8 @@ footer{padding:28px 16px 40px;color:var(--mute);font-size:.9rem}
   </table></div>
 </section>
 
-<section id="resources">
-  <h2>Resources</h2>
+<section id="day1-resources">
+  <h2>Day 1 · Resources</h2>
   <div class="grid">
     <div class="card"><h3>Slides</h3><ul>
       <li><a href="resources/theory/01_intro_recsys.pdf">1 · Introduction to recommender systems</a><small>What, why, types, rating matrix, sparsity</small></li>
@@ -99,9 +99,28 @@ footer{padding:28px 16px 40px;color:var(--mute);font-size:.9rem}
   </div>
 </section>
 
+<section id="day2">
+  <h2>Day 2 · 13 October · Schedule</h2>
+  <p>Neural collaborative filtering and graph neural network recommenders, ending with project problem statements and team formation.</p>
+  <div class="tw"><table>
+    <tr><th>Time</th><th>Type</th><th>Session</th></tr>
+    <tr><td class="t">08:30–09:15</td><td><span class="tag">Theory</span></td><td>Neural collaborative filtering</td></tr>
+    <tr><td class="t">09:15–10:45</td><td><span class="tag">Lab</span></td><td>Build a neural CF recommender (TensorFlow / PyTorch)</td></tr>
+    <tr class="brk"><td class="t">10:45–11:00</td><td>Break</td><td>Tea break</td></tr>
+    <tr><td class="t">11:00–11:45</td><td><span class="tag">Theory</span></td><td>Graph neural network recommenders</td></tr>
+    <tr><td class="t">11:45–12:45</td><td><span class="tag">Theory + Lab</span></td><td>GNN recommender, part 1</td></tr>
+    <tr class="brk"><td class="t">12:45–13:30</td><td>Lunch</td><td>Lunch break</td></tr>
+    <tr><td class="t">13:30–15:00</td><td><span class="tag">Lab</span></td><td>GNN recommender, part 2</td></tr>
+    <tr><td class="t">15:00–15:45</td><td><span class="tag">Project</span></td><td>Release of problem statements, team formation and project kick-off</td></tr>
+    <tr><td class="t">15:45–16:00</td><td><span class="tag">Closing</span></td><td>Closing remarks and feedback</td></tr>
+  </table></div>
+  <h2 style="margin-top:28px">Day 2 · Resources</h2>
+  <div class="card"><p style="margin:0">Slides, notebooks and code for Day 2 will be added here after the sessions.</p></div>
+</section>
+
 <section id="setup">
   <h2>Setup (≈10 minutes)</h2>
-  <p>Python 3.9 or newer. Choose one route.</p>
+  <p>Needed for the Day 1 labs. Python 3.9 or newer. Choose one route.</p>
   <div class="grid">
     <div class="card"><h3>Route A · Your laptop</h3>
 <pre>python3 -m venv recsys
